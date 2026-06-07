@@ -4,7 +4,7 @@ import sqlite3
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from database.db import get_db, init_db, seed_db, create_user, get_user_by_email
+from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id, get_user_expenses
 
 app = Flask(__name__)
 app.secret_key = "spendly-dev-secret-key"
@@ -96,7 +96,39 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    return "Profile page — coming in Step 4"
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    user = get_user_by_id(session["user_id"])
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    expenses = get_user_expenses(session["user_id"])
+
+    total_spent = sum(e["amount"] for e in expenses)
+    expense_count = len(expenses)
+
+    category_breakdown = {}
+    for e in expenses:
+        cat = e["category"]
+        if cat not in category_breakdown:
+            category_breakdown[cat] = {"count": 0, "amount": 0.0}
+        category_breakdown[cat]["count"] += 1
+        category_breakdown[cat]["amount"] += e["amount"]
+
+    categories_used = len(category_breakdown)
+    recent_expenses = expenses[:5]
+
+    return render_template(
+        "profile.html",
+        user=user,
+        total_spent=total_spent,
+        expense_count=expense_count,
+        category_breakdown=category_breakdown,
+        categories_used=categories_used,
+        recent_expenses=recent_expenses,
+    )
 
 
 @app.route("/expenses/add")
