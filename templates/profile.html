@@ -24,6 +24,12 @@
                     Member since {{ user["created_at"][:10] }}
                 </p>
             </div>
+            {% if expense_count > 0 %}
+            <a href="{{ url_for('export_expenses') }}" class="btn-ghost export-btn">
+                <i data-lucide="download"></i>
+                Export Excel
+            </a>
+            {% endif %}
         </div>
 
         <!-- Stats -->

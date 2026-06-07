@@ -63,6 +63,20 @@
 .profile-email { color: var(--ink-muted); }
 .profile-since { color: var(--ink-faint); }
 
+.export-btn {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    white-space: nowrap;
+}
+
+.export-btn svg {
+    width: 15px;
+    height: 15px;
+}
+
 .profile-email svg,
 .profile-since svg {
     width: 14px;

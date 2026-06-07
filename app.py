@@ -1,7 +1,10 @@
+import io
 import re
 import sqlite3
 
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+import openpyxl
+from openpyxl.styles import Font
+from flask import Flask, render_template, request, redirect, url_for, flash, session, send_file
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from database.db import get_db, init_db, seed_db, create_user, get_user_by_email, get_user_by_id, get_user_expenses
@@ -128,6 +131,41 @@ def profile():
         category_breakdown=category_breakdown,
         categories_used=categories_used,
         recent_expenses=recent_expenses,
+    )
+
+
+@app.route("/expenses/export")
+def export_expenses():
+    if not session.get("user_id"):
+        return redirect(url_for("login"))
+
+    expenses = get_user_expenses(session["user_id"])
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Expenses"
+
+    headers = ["Date", "Category", "Description", "Amount (INR)"]
+    ws.append(headers)
+    for cell in ws[1]:
+        cell.font = Font(bold=True)
+
+    for e in expenses:
+        ws.append([e["date"], e["category"], e["description"] or "", e["amount"]])
+
+    for col in ws.columns:
+        width = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = width + 4
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    return send_file(
+        buf,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="expenses.xlsx",
     )
 
 
